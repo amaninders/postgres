@@ -1,6 +1,5 @@
 // initialize the inputs from CLI
 const cohort = process.argv[2];
-const limit  = process.argv[3];
 
 // require node-postgres
 const { Pool } = require('pg');
@@ -15,14 +14,19 @@ const pool = new Pool({
 
 // SQL query
 pool.query(`
-SELECT students.id AS student_id, students.name AS student_name, cohorts.name AS cohort_name
-FROM students
-JOIN cohorts ON cohorts.id = students.cohort_id
+SELECT DISTINCT(teachers.name) AS teacher_name, cohorts.name AS cohort_name
+FROM assistance_requests
+JOIN teachers
+ON assistance_requests.teacher_id = teachers.id
+JOIN students
+ON assistance_requests.student_id = students.id
+JOIN cohorts
+ON students.cohort_id = cohorts.id
 WHERE cohorts.name LIKE '%${cohort}%'
-LIMIT ${limit};
+ORDER BY teachers.name;
 `)
 .then(res => {
   res.rows.forEach(result => {
-    console.log(`${result.student_name} has an id of ${result.student_id} and was in the ${result.cohort_name} cohort`);
+    console.log(`${result.cohort_name}: ${result.teacher_name}`);
   })
 });
